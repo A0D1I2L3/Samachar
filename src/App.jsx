@@ -128,6 +128,7 @@ export default function App() {
       const collapsed = checkCollapses(nextScores);
       if (collapsed.length > 0) {
         setCollapseKey(collapsed.length >= 2 ? "CASCADE" : collapsed[0]);
+        setNextDayData(b);
         setPartA(a);
         setPhase("consequence");
         setLoading(false);
@@ -136,6 +137,7 @@ export default function App() {
 
       if (dayNumber >= MAX_DAYS) {
         setIsVictory(true);
+        setNextDayData(b);
         setPartA(a);
         setPhase("consequence");
         setLoading(false);

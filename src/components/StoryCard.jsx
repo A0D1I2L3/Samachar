@@ -28,6 +28,7 @@ const EXPLOSIVE_DOTS = (n) =>
   ));
 
 export default function StoryCard({ story, onDragStart, dragging, compact }) {
+  if (!story) return null;
   const tagStyle = TAG_COLORS[story.tag] || TAG_COLORS.default;
 
   return (
@@ -79,7 +80,7 @@ export default function StoryCard({ story, onDragStart, dragging, compact }) {
           color: "#0f172a", lineHeight: 1.25, fontFamily: "'Georgia', serif",
         }}
       >
-        {story.headline.length > 80 ? story.headline.slice(0, 80) + "…" : story.headline}
+        {story.headline && story.headline.length > 80 ? story.headline.slice(0, 80) + "…" : story.headline}
       </p>
 
       {/* Emotional register */}

@@ -38,12 +38,10 @@ export default function BentoSlot({ slotConfig, story, onDrop, onRemove, publish
       onDrop={handleDrop}
       style={{
         minHeight: minH,
-        border: dragOver
-          ? `2px dashed ${accent}`
-          : story
-          ? `1.5px solid ${accent}44`
-          : `2px dashed #c8d5c8`,
         borderTop: `3px solid ${accent}`,
+        borderRight: dragOver ? `2px dashed ${accent}` : story ? `1.5px solid ${accent}44` : `2px dashed #c8d5c8`,
+        borderBottom: dragOver ? `2px dashed ${accent}` : story ? `1.5px solid ${accent}44` : `2px dashed #c8d5c8`,
+        borderLeft: dragOver ? `2px dashed ${accent}` : story ? `1.5px solid ${accent}44` : `2px dashed #c8d5c8`,
         borderRadius: "0 0 6px 6px",
         background: dragOver ? `${accent}08` : story ? "#fff" : "#f9fafb",
         padding: story ? "10px 12px 12px" : "10px",
