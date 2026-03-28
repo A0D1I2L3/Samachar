@@ -25,6 +25,19 @@
   --font-headline: "DM Serif Display", "Playfair Display", Georgia, serif;
   --font-mono: "IBM Plex Mono", "Courier New", monospace;
   --radius: 2px;
+
+  /* App-level colours kept as variables for easy theming */
+  --app-bg: #1e3a2f;
+  --panel-bg: #ffffff;
+  --newspaper-bg: #f5f0e8;
+  --newspaper-border: #c8a96e;
+  --pip-done: #86efac;
+  --pip-current: #ffffff;
+  --pip-future: #1e293b;
+  --edition-bar-bg: #1e293b;
+  --edition-bar-text: #e2e8f0;
+  --publish-ready-bg: #1e293b;
+  --publish-disabled-bg: #94a3b8;
 }
 
 /* ── Reset & Base ──────────────────────────────────── */
@@ -39,6 +52,299 @@ html, body, #root {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ── Animations ────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-warn {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   APP PAGE LAYOUT  (extracted from App.jsx inline styles)
+   ═══════════════════════════════════════════════════════ */
+
+.app-page {
+  min-height: 100vh;
+  background: var(--app-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 14px 40px;
+  font-family: 'Helvetica Neue', sans-serif;
+}
+
+/* ── Top Bar ─────────────────────────────────────────── */
+.top-bar {
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 10px;
+}
+
+.top-bar-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.top-bar-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #86efac;
+}
+
+.top-bar-title {
+  font-family: 'Georgia', serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.top-bar-atmosphere {
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 3px;
+}
+
+/* ── Day Progress Pips ───────────────────────────────── */
+.day-pips {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.day-pip {
+  width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.pip-done    { background: var(--pip-done); }
+.pip-current { background: var(--pip-current); }
+.pip-future  { background: var(--pip-future); }
+
+/* ── Main 3-Column Grid ──────────────────────────────── */
+.main-grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 220px 1fr 230px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* ── Shared Panel ────────────────────────────────────── */
+.panel {
+  background: var(--panel-bg);
+  border-radius: 12px;
+  padding: 14px 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.panel-title {
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.panel-subtitle {
+  font-size: 10px;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+.all-placed-msg {
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ── Newspaper (Centre Column) ───────────────────────── */
+.newspaper {
+  background: var(--newspaper-bg);
+  border-radius: 10px;
+  border: 2px solid var(--newspaper-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.newspaper-masthead {
+  text-align: center;
+  padding: 14px 20px 10px;
+  border-bottom: 2px solid var(--newspaper-border);
+}
+
+.newspaper-title {
+  font-size: 34px;
+  font-weight: 900;
+  font-family: 'Georgia', serif;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.newspaper-tagline {
+  font-size: 10px;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.newspaper-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #64748b;
+  border-top: 1px solid #d4c5a9;
+  padding-top: 5px;
+}
+
+.newspaper-meta-italic {
+  font-style: italic;
+}
+
+/* ── Edition Bar ─────────────────────────────────────── */
+.edition-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 16px;
+  background: var(--edition-bar-bg);
+  color: var(--edition-bar-text);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Bento Drop Zone Grid ────────────────────────────── */
+.bento-grid {
+  padding: 12px 14px;
+}
+
+.bento-top {
+  margin-bottom: 10px;
+}
+
+.bento-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── Publish Button ──────────────────────────────────── */
+.publish-row {
+  padding: 4px 14px 14px;
+}
+
+.publish-btn {
+  width: 100%;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.publish-btn--ready {
+  background: var(--publish-ready-bg);
+  cursor: pointer;
+}
+
+.publish-btn--disabled {
+  background: var(--publish-disabled-bg);
+  cursor: not-allowed;
+}
+
+/* ── Right Panel Internals ───────────────────────────── */
+.right-panel {
+  /* inherits .panel */
+}
+
+.divider-section {
+  border-top: 1px solid #f1f5f9;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.multiplier-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.multiplier-value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.multiplier-hint {
+  font-size: 9px;
+  color: #94a3b8;
+  margin-top: 8px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.arc-flag {
+  font-size: 9px;
+  color: #475569;
+  background: #f8fafc;
+  border-radius: 3px;
+  padding: 3px 7px;
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXISTING COMPONENT STYLES (unchanged)
+   ═══════════════════════════════════════════════════════ */
 
 /* ── App Root ──────────────────────────────────────── */
 .app-root {
@@ -182,11 +488,6 @@ html, body, #root {
   animation: pulse-warn 1.2s ease-in-out infinite;
 }
 
-@keyframes pulse-warn {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 .metric-max {
   font-size: 9px;
   color: var(--text-muted);
@@ -229,11 +530,6 @@ html, body, #root {
   border: 1px solid var(--border);
   padding: 32px;
   animation: slide-in 0.4s ease;
-}
-
-@keyframes slide-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .story-meta-row {
@@ -485,10 +781,6 @@ html, body, #root {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ── Game Over ─────────────────────────────────────── */
 .gameover-overlay {
   position: fixed;
@@ -500,11 +792,6 @@ html, body, #root {
   justify-content: center;
   z-index: 999;
   animation: fade-in 0.4s ease;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .gameover-card {
