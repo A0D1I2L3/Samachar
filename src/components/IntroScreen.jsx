@@ -14,7 +14,7 @@ const HOW_TO_PLAY = [
   {
     icon: "📰",
     title: "Read the Desk",
-    body: "Each day, four stories land on your desk. One is a planted distraction. Learn to tell them apart.",
+    body: "Each day, five stories land on your desk. Pick four for the front page. One might be a planted distraction — learn to tell them apart.",
   },
   {
     icon: "⟺",
@@ -49,18 +49,16 @@ const PARAMS_INTRO = [
 export default function IntroScreen({ onStart }) {
   const { theme, settings } = useSettings();
   const [factIdx, setFactIdx] = useState(0);
-  const [visible, setVisible] = useState(false);
-  const [cardVisible, setCardVisible] = useState(false);
+  const [step, setStep] = useState(0); // 0→page, 1→title, 2→fact, 3→params, 4→howto, 5→warning, 6→btn
 
+  // Stagger sections in
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(true), 80);
-    const t2 = setTimeout(() => setCardVisible(true), 400);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const delays = [60, 320, 580, 860, 1120, 1340, 1540];
+    const timers = delays.map((d, i) => setTimeout(() => setStep(i + 1), d));
+    return () => timers.forEach(clearTimeout);
   }, []);
 
+  // Rotate press facts
   useEffect(() => {
     const t = setInterval(
       () => setFactIdx((i) => (i + 1) % FACTS.length),
@@ -68,6 +66,12 @@ export default function IntroScreen({ onStart }) {
     );
     return () => clearInterval(t);
   }, []);
+
+  const vis = (threshold, delay = 0) => ({
+    opacity: step >= threshold ? 1 : 0,
+    transform: step >= threshold ? "translateY(0)" : "translateY(18px)",
+    transition: `opacity 0.55s ease ${delay}ms, transform 0.55s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+  });
 
   return (
     <div
@@ -83,19 +87,50 @@ export default function IntroScreen({ onStart }) {
         alignItems: "center",
         justifyContent: "flex-start",
         padding: "40px 20px 60px",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.5s ease",
+        opacity: step >= 1 ? 1 : 0,
+        transition: "opacity 0.45s ease",
         overflowY: "auto",
       }}
     >
-      {/* ── MASTHEAD ── */}
+      {/* ── TICKER ─────────────────────────────────────────────── */}
       <div
         style={{
+          ...vis(1),
+          width: "100%",
+          maxWidth: 700,
+          overflow: "hidden",
+          marginBottom: 28,
+          borderTop: `1px solid ${theme.cardBorder}`,
+          borderBottom: `1px solid ${theme.cardBorder}`,
+          padding: "6px 0",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-block",
+            animation: "ticker 24s linear infinite",
+            fontFamily: theme.mono,
+            fontSize: 9,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: theme.subColor,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {"BREAKING: NEW DAY AT THE SAMACHAR TIMES   ·   BHARATPUR'S LAST INDEPENDENT PAPER   ·   FIVE STORIES · FOUR SLOTS · YOUR CHOICE   ·   THE BENTO GRID IS THE CONSCIENCE MADE VISIBLE   ·   ".repeat(
+            3,
+          )}
+        </div>
+      </div>
+
+      {/* ── MASTHEAD ─────────────────────────────────────────────── */}
+      <div
+        style={{
+          ...vis(2),
           textAlign: "center",
-          marginBottom: 36,
-          opacity: cardVisible ? 1 : 0,
-          transform: cardVisible ? "translateY(0)" : "translateY(-12px)",
-          transition: "opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s",
+          marginBottom: 32,
+          width: "100%",
+          maxWidth: 700,
         }}
       >
         <div
@@ -110,15 +145,13 @@ export default function IntroScreen({ onStart }) {
         >
           Bharatpur, India · A Newspaper Simulation
         </div>
-
-        {/* Big title rule */}
         <div
           style={{
+            display: "inline-block",
             borderTop: `3px solid ${theme.textColor}`,
             borderBottom: `3px solid ${theme.textColor}`,
             padding: "18px 48px",
             marginBottom: 12,
-            display: "inline-block",
           }}
         >
           <div
@@ -129,12 +162,15 @@ export default function IntroScreen({ onStart }) {
               letterSpacing: "-1.5px",
               color: theme.textColor,
               lineHeight: 1,
+              animation:
+                step >= 2
+                  ? "masthead-stamp 0.9s cubic-bezier(0.16,1,0.3,1) both"
+                  : "none",
             }}
           >
             The Samachar Times
           </div>
         </div>
-
         <div
           style={{
             fontFamily: theme.font,
@@ -151,43 +187,35 @@ export default function IntroScreen({ onStart }) {
         </div>
       </div>
 
-      {/* ── ROLLING FACT ── */}
+      {/* ── PRESS FACT ───────────────────────────────────────────── */}
       <div
         style={{
+          ...vis(3),
           background: theme.cardBg,
           border: `1px solid ${theme.cardBorder}`,
           borderLeft: `4px solid ${theme.textColor}`,
           padding: "12px 20px",
           maxWidth: 560,
           width: "100%",
-          marginBottom: 36,
+          marginBottom: 32,
           fontFamily: theme.mono,
           fontSize: 11,
           color: theme.subColor,
           lineHeight: 1.7,
-          opacity: cardVisible ? 1 : 0,
-          transition: "opacity 0.5s ease 0.25s",
           minHeight: 48,
         }}
       >
         <span style={{ color: theme.textColor, fontWeight: 700 }}>
           PRESS FACT ·{" "}
         </span>
-        <span key={factIdx} style={{ animation: "fadeIn 0.4s ease" }}>
+        <span key={factIdx} style={{ animation: "fadeIn 0.5s ease" }}>
           {FACTS[factIdx]}
         </span>
       </div>
 
-      {/* ── WHAT ARE YOU MANAGING ── */}
+      {/* ── FIVE VARIABLES ───────────────────────────────────────── */}
       <div
-        style={{
-          maxWidth: 700,
-          width: "100%",
-          marginBottom: 36,
-          opacity: cardVisible ? 1 : 0,
-          transform: cardVisible ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 0.5s ease 0.35s, transform 0.5s ease 0.35s",
-        }}
+        style={{ ...vis(4), maxWidth: 700, width: "100%", marginBottom: 32 }}
       >
         <div
           style={{
@@ -203,14 +231,8 @@ export default function IntroScreen({ onStart }) {
         >
           Five Variables. One Newspaper. No Easy Answers.
         </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
-          {PARAMS_INTRO.map((p) => (
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {PARAMS_INTRO.map((p, i) => (
             <div
               key={p.symbol}
               style={{
@@ -220,15 +242,13 @@ export default function IntroScreen({ onStart }) {
                 borderTop: `3px solid ${p.color}`,
                 borderRadius: 4,
                 padding: "12px 14px",
+                animation:
+                  step >= 4
+                    ? `fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms both`
+                    : "none",
               }}
             >
-              <div
-                style={{
-                  fontSize: 18,
-                  marginBottom: 4,
-                  lineHeight: 1,
-                }}
-              >
+              <div style={{ fontSize: 18, marginBottom: 4, lineHeight: 1 }}>
                 {p.icon}
               </div>
               <div
@@ -271,16 +291,9 @@ export default function IntroScreen({ onStart }) {
         </div>
       </div>
 
-      {/* ── HOW TO PLAY ── */}
+      {/* ── HOW TO PLAY ──────────────────────────────────────────── */}
       <div
-        style={{
-          maxWidth: 700,
-          width: "100%",
-          marginBottom: 40,
-          opacity: cardVisible ? 1 : 0,
-          transform: cardVisible ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 0.5s ease 0.5s, transform 0.5s ease 0.5s",
-        }}
+        style={{ ...vis(5), maxWidth: 700, width: "100%", marginBottom: 36 }}
       >
         <div
           style={{
@@ -294,7 +307,7 @@ export default function IntroScreen({ onStart }) {
             paddingBottom: 8,
           }}
         >
-          How to Play
+          How to Play — Five Stories, Four Slots
         </div>
         <div
           style={{
@@ -314,6 +327,10 @@ export default function IntroScreen({ onStart }) {
                 display: "flex",
                 gap: 12,
                 alignItems: "flex-start",
+                animation:
+                  step >= 5
+                    ? `fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 100}ms both`
+                    : "none",
               }}
             >
               <div style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
@@ -349,18 +366,17 @@ export default function IntroScreen({ onStart }) {
         </div>
       </div>
 
-      {/* ── THE WARNING ── */}
+      {/* ── WARNING ──────────────────────────────────────────────── */}
       <div
         style={{
+          ...vis(6),
           maxWidth: 560,
           width: "100%",
-          marginBottom: 36,
+          marginBottom: 32,
           background: theme.darkMode ? "#2a1a1a" : "#fef9f0",
           border: `1px solid ${theme.cardBorder}`,
-          borderLeft: `4px solid #c8a96e`,
+          borderLeft: "4px solid #c8a96e",
           padding: "14px 20px",
-          opacity: cardVisible ? 1 : 0,
-          transition: "opacity 0.5s ease 0.65s",
         }}
       >
         <div
@@ -384,21 +400,15 @@ export default function IntroScreen({ onStart }) {
             fontStyle: "italic",
           }}
         >
-          The distraction story arrives every day. Someone manufactured it.
-          Someone wants you to run it. It looks real. It sounds important. It is
-          neither. Finding it — and burying it — is the job.
+          Five stories arrive each morning. You place four. The fifth is left
+          behind — unkilled, unpublished, just… passed over. One of them was
+          planted. One of them is the truth nobody wants to print. Your call
+          which is which.
         </div>
       </div>
 
-      {/* ── START BUTTON ── */}
-      <div
-        style={{
-          opacity: cardVisible ? 1 : 0,
-          transform: cardVisible ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 0.5s ease 0.8s, transform 0.5s ease 0.8s",
-          textAlign: "center",
-        }}
-      >
+      {/* ── START BUTTON ─────────────────────────────────────────── */}
+      <div style={{ ...vis(7), textAlign: "center" }}>
         <button
           onClick={onStart}
           style={{
@@ -413,10 +423,25 @@ export default function IntroScreen({ onStart }) {
             textTransform: "uppercase",
             cursor: "pointer",
             borderRadius: 2,
-            transition: "opacity 0.15s",
+            transition:
+              "opacity 0.15s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.88";
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.28)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1";
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = "translateY(0) scale(0.97)";
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px) scale(1)";
+          }}
         >
           ◆ Open the Newsroom — Day 1
         </button>
