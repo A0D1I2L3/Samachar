@@ -205,13 +205,62 @@ export default function NewspaperGrid({
     (e) => {
       e.preventDefault();
       setHoverCell(null);
-      // Ignore if this was a placed-card drag (handled by delete zone / card logic)
-      if (!draggedStory) return;
 
       const cell = pxToCell(e.clientX, e.clientY);
       if (!cell) return;
 
-      // Check if dropping onto an existing placed card — REPLACE it (before any other guards)
+      // ── CASE A: a placed card is being dragged onto the grid background ──
+      // (card-to-card swap is handled in the card's own onDrop; this catches
+      //  a placed card dropped onto an empty cell)
+      if (draggingCardId) {
+        const draggedItem = items.find((it) => it.id === draggingCardId);
+        if (!draggedItem) return;
+
+        // Dropped on another placed card → swap stories, keep both sizes/positions
+        const targetItem = items.find(
+          (it) =>
+            it.id !== draggingCardId &&
+            cell.col >= it.col &&
+            cell.col < it.col + it.w &&
+            cell.row >= it.row &&
+            cell.row < it.row + it.h,
+        );
+
+        if (targetItem) {
+          setItems((prev) =>
+            prev.map((it) => {
+              if (it.id === draggedItem.id)
+                return { ...it, story: targetItem.story, id: targetItem.story.story_id, preExpandW: null, preExpandH: null };
+              if (it.id === targetItem.id)
+                return { ...it, story: draggedItem.story, id: draggedItem.story.story_id, preExpandW: null, preExpandH: null };
+              return it;
+            }),
+          );
+          setDraggingCardId(null);
+          return;
+        }
+
+        // Dropped on empty cell → move the card there
+        let { col, row } = cell;
+        const others = items.filter((it) => it.id !== draggingCardId);
+        if (canPlace(others, col, row, draggedItem.w, draggedItem.h)) {
+          setItems((prev) =>
+            prev.map((it) =>
+              it.id === draggingCardId
+                ? { ...it, col, row, preExpandW: null, preExpandH: null }
+                : it,
+            ),
+          );
+        }
+        setDraggingCardId(null);
+        return;
+      }
+
+      // ── CASE B: a pool story is being dropped onto the grid ──
+      if (!draggedStory) return;
+
+      // Dropped on an existing placed card → replace that card's story
+      // Also remove any other grid slot that already holds this pool story (no duplicates)
       const targetItem = items.find(
         (it) =>
           cell.col >= it.col &&
@@ -221,30 +270,38 @@ export default function NewspaperGrid({
       );
 
       if (targetItem) {
-        // Same story dropped on itself — no-op
-        if (targetItem.story.story_id === draggedStory.story_id) return;
-        // Swap story in place, keep position + size, clear any pre-expand memory
+        if (targetItem.story.story_id === draggedStory.story_id) return; // same story, no-op
+        setItems((prev) =>
+          prev
+            .filter((it) => it.story.story_id !== draggedStory.story_id) // remove duplicate if present
+            .map((it) =>
+              it.id === targetItem.id
+                ? { ...it, id: draggedStory.story_id, story: draggedStory, preExpandW: null, preExpandH: null }
+                : it,
+            ),
+        );
+        return;
+      }
+
+      // Dropped on empty space
+      // Remove duplicate if the pool story is already placed somewhere
+      const alreadyPlaced = items.find((it) => it.story.story_id === draggedStory.story_id);
+      if (alreadyPlaced) {
+        // Move it to the new cell instead of duplicating
+        const others = items.filter((it) => it.story.story_id !== draggedStory.story_id);
+        let { col, row } = cell;
+        if (!canPlace(others, col, row, alreadyPlaced.w, alreadyPlaced.h)) return;
         setItems((prev) =>
           prev.map((it) =>
-            it.id === targetItem.id
-              ? {
-                  ...it,
-                  id: draggedStory.story_id,
-                  story: draggedStory,
-                  preExpandW: null,
-                  preExpandH: null,
-                }
+            it.story.story_id === draggedStory.story_id
+              ? { ...it, col, row }
               : it,
           ),
         );
         return;
       }
 
-      // DROP INTO EMPTY SPACE
-      // Guard: same story already placed somewhere else — no duplicate
-      if (items.some((it) => it.story.story_id === draggedStory.story_id))
-        return;
-      if (items.length >= MAX_HEADLINES) return; // grid full, no free slot
+      if (items.length >= MAX_HEADLINES) return;
 
       let { col, row } = cell;
       if (!canPlace(items, col, row, DEFAULT_W, DEFAULT_H)) {
@@ -266,7 +323,7 @@ export default function NewspaperGrid({
         },
       ]);
     },
-    [draggedStory, items, pxToCell],
+    [draggedStory, draggingCardId, items, pxToCell],
   );
 
   // ── Remove ────────────────────────────────────────────────
@@ -655,32 +712,51 @@ export default function NewspaperGrid({
             }}
             onDragEnd={() => setDraggingCardId(null)}
             onDragOver={(e) => {
-              // Only accept drops from the pool (draggedStory set), not from other cards
-              if (!published && draggedStory && !draggingCardId) {
+              if (published) return;
+              const isPoolDrop = draggedStory && !draggingCardId;
+              const isCardSwap = draggingCardId && draggingCardId !== item.id;
+              if (isPoolDrop || isCardSwap) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.dataTransfer.dropEffect = "move";
               }
             }}
             onDrop={(e) => {
-              if (!published && draggedStory && !draggingCardId) {
+              if (published) return;
+
+              // ── Card-to-card swap ──
+              if (draggingCardId && draggingCardId !== item.id) {
                 e.preventDefault();
                 e.stopPropagation();
-                // Same story dropped on itself — no-op
-                if (item.story.story_id === draggedStory.story_id) return;
-                // Replace this card's story, keep its size + position
+                const draggedItem = items.find((it) => it.id === draggingCardId);
+                if (!draggedItem) return;
+                // Swap stories between the two cards, keep sizes + positions
                 setItems((prev) =>
-                  prev.map((it) =>
-                    it.id === item.id
-                      ? {
-                          ...it,
-                          id: draggedStory.story_id,
-                          story: draggedStory,
-                          preExpandW: null,
-                          preExpandH: null,
-                        }
-                      : it,
-                  ),
+                  prev.map((it) => {
+                    if (it.id === draggingCardId)
+                      return { ...it, story: item.story, id: item.story.story_id, preExpandW: null, preExpandH: null };
+                    if (it.id === item.id)
+                      return { ...it, story: draggedItem.story, id: draggedItem.story.story_id, preExpandW: null, preExpandH: null };
+                    return it;
+                  }),
+                );
+                setDraggingCardId(null);
+                return;
+              }
+
+              // ── Pool story → replace this card ──
+              if (draggedStory && !draggingCardId) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (item.story.story_id === draggedStory.story_id) return; // same story, no-op
+                setItems((prev) =>
+                  prev
+                    .filter((it) => it.story.story_id !== draggedStory.story_id) // remove if already placed
+                    .map((it) =>
+                      it.id === item.id
+                        ? { ...it, id: draggedStory.story_id, story: draggedStory, preExpandW: null, preExpandH: null }
+                        : it,
+                    ),
                 );
               }
             }}
