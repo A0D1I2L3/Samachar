@@ -12,15 +12,9 @@ const MIN_W = 1;
 const MIN_H = 1;
 
 // ─────────────────────────────────────────────────────────────
-//  CELL VALUE MATRIX  ← EDIT THIS to change per-cell weights
-//
-//  Shape: 10 rows × 10 cols  (CELL_VALUE_MATRIX[row][col])
-//  Row 0 = top of the grid, Row 9 = bottom.
-//  Values here graduate from 2.5 (top) down to 0.3 (bottom).
-//  The weight of a placed headline = sum of all cell values it covers.
+//  CELL VALUE MATRIX
 // ─────────────────────────────────────────────────────────────
 export const CELL_VALUE_MATRIX = [
-  // col: 0    1    2    3    4    5    6    7    8    9
   [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5], // row 0
   [2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2], // row 1
   [1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9], // row 2
@@ -33,15 +27,13 @@ export const CELL_VALUE_MATRIX = [
   [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], // row 9
 ];
 
-/** Sum all cell values that a placed item covers */
 function computeWeight(item) {
   let total = 0;
-  for (let r = item.row; r < item.row + item.h; r++) {
+  for (let r = item.row; r < item.row + item.h; r++)
     for (let c = item.col; c < item.col + item.w; c++) {
       const rowVals = CELL_VALUE_MATRIX[r];
       if (rowVals) total += rowVals[c] ?? 0;
     }
-  }
   return Math.round(total * 100) / 100;
 }
 
@@ -92,13 +84,9 @@ function findFreeOrigin(items) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  RESIZE EDGE DETECTION  (pointer-based, no handle divs)
-//
-//  Returns the resize "edge" string (n/s/e/w/ne/nw/se/sw)
-//  when the pointer is within EDGE_PX pixels of that edge,
-//  or null if it's in the interior.
+//  RESIZE EDGE DETECTION
 // ─────────────────────────────────────────────────────────────
-const EDGE_PX = 10; // px from border that counts as "on edge"
+const EDGE_PX = 10;
 
 function detectEdge(e, el) {
   const rect = el.getBoundingClientRect();
@@ -106,12 +94,10 @@ function detectEdge(e, el) {
   const y = e.clientY - rect.top;
   const w = rect.width;
   const h = rect.height;
-
   const onN = y <= EDGE_PX;
   const onS = y >= h - EDGE_PX;
   const onW = x <= EDGE_PX;
   const onE = x >= w - EDGE_PX;
-
   if (onN && onW) return "nw";
   if (onN && onE) return "ne";
   if (onS && onW) return "sw";
@@ -135,9 +121,8 @@ const EDGE_CURSORS = {
 };
 
 // ─────────────────────────────────────────────────────────────
-//  COMPONENT
+//  DEFAULT THEME
 // ─────────────────────────────────────────────────────────────
-// Default theme fallback so component still works standalone
 const DEFAULT_THEME = {
   cardBg: "#fff",
   cardBorder: "#c8a96e88",
@@ -150,6 +135,9 @@ const DEFAULT_THEME = {
   darkMode: false,
 };
 
+// ─────────────────────────────────────────────────────────────
+//  COMPONENT
+// ─────────────────────────────────────────────────────────────
 export default function NewspaperGrid({
   draggedStory,
   onGridChange,
@@ -160,16 +148,26 @@ export default function NewspaperGrid({
   const [items, setItems] = useState([]);
   const [hoverCell, setHoverCell] = useState(null);
   const [resizing, setResizing] = useState(null);
-  // ghostRect: {col,row,w,h,valid} — shown while resizing
   const [ghostRect, setGhostRect] = useState(null);
-  // hoverEdge: { id, edge } — tracks which edge cursor is near
   const [hoverEdge, setHoverEdge] = useState(null);
+  // ── CHANGE 3: track if something is being dragged over delete zone
+  const [deleteZoneActive, setDeleteZoneActive] = useState(false);
 
   const gridRef = useRef(null);
 
+  // ── CHANGE 4: compute whether grid is fully covered (no whitespace)
+  const gridFull = useCallback((currentItems) => {
+    const occupied = occupiedCells(currentItems);
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (!occupied.has(`${c},${r}`)) return false;
+    return true;
+  }, []);
+
   useEffect(() => {
-    onGridChange?.(items);
-  }, [items, onGridChange]);
+    // Pass items AND fullness flag to parent
+    onGridChange?.(items, gridFull(items));
+  }, [items, onGridChange, gridFull]);
 
   // ── Cell dimensions ───────────────────────────────────────
   const cellSize = useCallback(() => {
@@ -242,23 +240,37 @@ export default function NewspaperGrid({
     setItems((prev) => prev.filter((it) => it.id !== id));
   }, []);
 
-  // ── Pointer-based resize ──────────────────────────────────
-  //
-  //  onPointerMove over an item card:
-  //    → detect which edge the pointer is near
-  //    → set cursor accordingly
-  //
-  //  onPointerDown on an item card:
-  //    → if edge detected, start resizing (capture pointer)
-  //
-  //  Global pointermove / pointerup while resizing:
-  //    → compute new col/row/w/h from delta
-  //    → update ghostRect (preview)
-  //    → on pointerup, commit if valid else snap back
+  // ── CHANGE 2: Double-click to auto-fill available space ───
+  const handleDoubleClick = useCallback((e, id) => {
+    e.stopPropagation();
+    setItems((prev) => {
+      const item = prev.find((it) => it.id === id);
+      if (!item) return prev;
+      const others = prev.filter((it) => it.id !== id);
+      // Expand from item's current origin in all directions greedily
+      let bestW = item.w;
+      let bestH = item.h;
+      // Try expanding width first, then height
+      for (let w = item.w; w <= COLS - item.col; w++) {
+        for (let h = item.h; h <= ROWS - item.row; h++) {
+          if (canPlace(others, item.col, item.row, w, h)) {
+            bestW = w;
+            bestH = h;
+          } else {
+            break;
+          }
+        }
+      }
+      return prev.map((it) =>
+        it.id === id ? { ...it, w: bestW, h: bestH } : it,
+      );
+    });
+  }, []);
 
+  // ── Pointer-based resize ──────────────────────────────────
   const handleCardPointerMove = useCallback(
     (e, id) => {
-      if (resizing) return; // already resizing — handled globally
+      if (resizing) return;
       const edge = detectEdge(e, e.currentTarget);
       if (edge) {
         e.currentTarget.style.cursor = EDGE_CURSORS[edge];
@@ -283,7 +295,7 @@ export default function NewspaperGrid({
   const handleCardPointerDown = useCallback(
     (e, id) => {
       const edge = detectEdge(e, e.currentTarget);
-      if (!edge) return; // interior — don't hijack (allow remove button etc.)
+      if (!edge) return;
       e.preventDefault();
       e.stopPropagation();
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -313,7 +325,6 @@ export default function NewspaperGrid({
     [items],
   );
 
-  // Global pointer events during resize
   useEffect(() => {
     if (!resizing) return;
 
@@ -328,8 +339,8 @@ export default function NewspaperGrid({
         row = resizing.origRow;
       let w = resizing.origW,
         h = resizing.origH;
-
       const edge = resizing.edge;
+
       if (edge === "se") {
         w = Math.max(MIN_W, resizing.origW + dx);
         h = Math.max(MIN_H, resizing.origH + dy);
@@ -391,7 +402,6 @@ export default function NewspaperGrid({
             ),
           );
         }
-        // else snap back — no update needed (items unchanged)
       }
       setResizing(null);
       setGhostRect(null);
@@ -422,18 +432,28 @@ export default function NewspaperGrid({
           })()
       : null;
 
-  // ── Helper: absolute position from grid coords ────────────
   function absStyle(col, row, w, h, inset = 2) {
     return {
       position: "absolute",
       left: `calc(${col} * (100% / ${COLS}) + ${inset}px)`,
       top: `calc(${row} * (100% / ${ROWS}) + ${inset}px)`,
-      width: `calc(${w}   * (100% / ${COLS}) - ${inset * 2}px)`,
-      height: `calc(${h}   * (100% / ${ROWS}) - ${inset * 2}px)`,
+      width: `calc(${w} * (100% / ${COLS}) - ${inset * 2}px)`,
+      height: `calc(${h} * (100% / ${ROWS}) - ${inset * 2}px)`,
     };
   }
 
-  // ── Render ────────────────────────────────────────────────
+  // ── CHANGE 1: auto font size based on card area AND headline length ──
+  function autoFontSize(item) {
+    const area = item.w * item.h;
+    const len = item.story.headline.length;
+    const base = area * 2.2;
+    const scaled = base / (len / 12);
+    return Math.max(7, Math.min(18, scaled));
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  RENDER
+  // ─────────────────────────────────────────────────────────
   return (
     <div
       ref={gridRef}
@@ -458,11 +478,10 @@ export default function NewspaperGrid({
           : "default",
       }}
     >
-      {/* Grid cell backgrounds — show value as faint tint */}
+      {/* Grid cell backgrounds */}
       {Array.from({ length: ROWS }).map((_, r) =>
         Array.from({ length: COLS }).map((_, c) => {
           const val = CELL_VALUE_MATRIX[r]?.[c] ?? 1;
-          // Map 0.3–2.5 → opacity 0.04–0.18 for a subtle value heatmap
           const opacity = 0.04 + ((val - 0.3) / (2.5 - 0.3)) * 0.14;
           return (
             <div
@@ -524,8 +543,6 @@ export default function NewspaperGrid({
         const tagStyle = TAG_COLORS[item.story.tag] || TAG_COLORS.default;
         const isResizingThis = resizing?.id === item.id;
         const w = computeWeight(item);
-
-        // Visual edge hint strips (shown when hover edge detected for this item)
         const showEdge = hoverEdge?.id === item.id && !resizing;
 
         return (
@@ -534,6 +551,7 @@ export default function NewspaperGrid({
             onPointerMove={(e) => handleCardPointerMove(e, item.id)}
             onPointerLeave={handleCardPointerLeave}
             onPointerDown={(e) => handleCardPointerDown(e, item.id)}
+            onDoubleClick={(e) => !published && handleDoubleClick(e, item.id)}
             style={{
               ...absStyle(item.col, item.row, item.w, item.h, 2),
               background: theme.cardBg,
@@ -553,64 +571,48 @@ export default function NewspaperGrid({
               touchAction: "none",
             }}
           >
-            {/* Edge highlight strips — visual affordance */}
+            {/* Edge highlight strips */}
             {showEdge && !published && (
               <>
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 6,
-                    background: "#c8a96e44",
-                    borderRadius: "4px 4px 0 0",
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 6,
-                    background: "#c8a96e44",
-                    borderRadius: "0 0 4px 4px",
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    width: 6,
-                    background: "#c8a96e44",
-                    borderRadius: "4px 0 0 4px",
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    width: 6,
-                    background: "#c8a96e44",
-                    borderRadius: "0 4px 4px 0",
-                    pointerEvents: "none",
-                  }}
-                />
+                {["top", "bottom"].map((pos) => (
+                  <div
+                    key={pos}
+                    style={{
+                      position: "absolute",
+                      [pos]: 0,
+                      left: 0,
+                      right: 0,
+                      height: 6,
+                      background: "#c8a96e44",
+                      borderRadius:
+                        pos === "top" ? "4px 4px 0 0" : "0 0 4px 4px",
+                      pointerEvents: "none",
+                    }}
+                  />
+                ))}
+                {["left", "right"].map((pos) => (
+                  <div
+                    key={pos}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      [pos]: 0,
+                      bottom: 0,
+                      width: 6,
+                      background: "#c8a96e44",
+                      borderRadius:
+                        pos === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
+                      pointerEvents: "none",
+                    }}
+                  />
+                ))}
               </>
             )}
 
             {/* Remove button */}
             {!published && (
               <button
-                onPointerDown={(e) => e.stopPropagation()} // don't start resize
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => handleRemove(item.id)}
                 style={{
                   position: "absolute",
@@ -637,7 +639,7 @@ export default function NewspaperGrid({
               </button>
             )}
 
-            {/* Weight badge — now shows weighted sum */}
+            {/* Weight badge */}
             <div
               style={{
                 position: "absolute",
@@ -656,7 +658,7 @@ export default function NewspaperGrid({
               ◼ {w}
             </div>
 
-            {/* Resize affordance hint label */}
+            {/* Resize hint + double-click hint */}
             {!published && (
               <div
                 style={{
@@ -669,7 +671,7 @@ export default function NewspaperGrid({
                   letterSpacing: "0.04em",
                 }}
               >
-                ⟺ drag edges
+                ⟺ drag edges · dbl-click to fill
               </div>
             )}
 
@@ -710,12 +712,12 @@ export default function NewspaperGrid({
               )}
             </div>
 
-            {/* Headline */}
+            {/* CHANGE 1: Headline with auto font size */}
             <p
               style={{
                 margin: 0,
                 fontWeight: 800,
-                fontSize: Math.max(8, Math.min(14, item.w * item.h * 1.5)),
+                fontSize: autoFontSize(item),
                 color: theme.textColor,
                 lineHeight: 1.2,
                 fontFamily: theme.font,
@@ -751,6 +753,57 @@ export default function NewspaperGrid({
         );
       })}
 
+      {/* CHANGE 3: Delete zone — bottom-left corner */}
+      {!published && (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDeleteZoneActive(true);
+          }}
+          onDragLeave={() => setDeleteZoneActive(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDeleteZoneActive(false);
+            if (draggedStory) {
+              setItems((prev) =>
+                prev.filter(
+                  (it) => it.story.story_id !== draggedStory.story_id,
+                ),
+              );
+            }
+          }}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            width: 64,
+            height: 64,
+            background: deleteZoneActive
+              ? "rgba(239,68,68,0.18)"
+              : "rgba(239,68,68,0.07)",
+            border: `1.5px dashed ${deleteZoneActive ? "#ef4444" : "#ef444488"}`,
+            borderRadius: "0 8px 0 4px",
+            zIndex: 25,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 9,
+            color: deleteZoneActive ? "#ef4444" : "#ef444488",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            flexDirection: "column",
+            gap: 2,
+            pointerEvents: "auto",
+            transition: "background 0.15s, color 0.15s, border-color 0.15s",
+          }}
+        >
+          <span style={{ fontSize: 14 }}>✕</span>
+          <span>Remove</span>
+        </div>
+      )}
+
       {/* Empty state */}
       {items.length === 0 && (
         <div
@@ -784,13 +837,14 @@ export default function NewspaperGrid({
               margin: 0,
             }}
           >
-            Up to {MAX_HEADLINES} headlines · Drag edges to resize &amp; weight
+            Up to {MAX_HEADLINES} headlines · Drag edges to resize ·
+            Double-click to auto-fill
           </p>
         </div>
       )}
 
       {/* Max banner */}
-      {items.length >= MAX_HEADLINES && (
+      {items.length >= MAX_HEADLINES && !gridFull(items) && (
         <div
           style={{
             position: "absolute",
@@ -807,7 +861,29 @@ export default function NewspaperGrid({
             zIndex: 20,
           }}
         >
-          MAX {MAX_HEADLINES} HEADLINES PLACED
+          ALL STORIES PLACED — RESIZE TO FILL THE PAGE BEFORE SUBMITTING
+        </div>
+      )}
+
+      {/* CHANGE 4: Full-grid achieved banner */}
+      {gridFull(items) && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: "#2d6a4fdd",
+            color: "#fff",
+            fontSize: 9,
+            textAlign: "center",
+            padding: "4px 0",
+            letterSpacing: "0.08em",
+            pointerEvents: "none",
+            zIndex: 20,
+          }}
+        >
+          FRONT PAGE COMPLETE — READY TO PUBLISH
         </div>
       )}
     </div>
