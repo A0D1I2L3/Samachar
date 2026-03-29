@@ -104,7 +104,7 @@ body,
 
 .top-bar-label {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 15px;
     letter-spacing: 2px;
     text-transform: uppercase;
     opacity: 0.7;
@@ -120,7 +120,7 @@ body,
 
 .top-bar-atmosphere {
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 14px;
     font-style: italic;
     opacity: 0.65;
     margin-top: 2px;
@@ -175,7 +175,7 @@ body,
 
 .panel-title {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 2px;
@@ -185,7 +185,7 @@ body,
 
 .panel-subtitle {
     font-family: var(--font-body);
-    font-size: 10px;
+    font-size: 15px;
     font-style: italic;
     margin-bottom: 12px;
     margin-top: 6px;
@@ -193,7 +193,7 @@ body,
 
 .all-placed-msg {
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 14px;
     font-style: italic;
     text-align: center;
     padding: 20px 0;
@@ -221,7 +221,7 @@ body,
 
 .newspaper-tagline {
     font-family: var(--font-body);
-    font-size: 10px;
+    font-size: 15px;
     font-style: italic;
     margin-top: 4px;
     opacity: 0.65;
@@ -235,7 +235,7 @@ body,
     padding-top: 6px;
     border-top: 1px solid;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 1px;
     opacity: 0.65;
 }
@@ -248,7 +248,7 @@ body,
     justify-content: space-between;
     padding: 5px 14px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 1px;
     border-bottom: 1px solid;
     opacity: 0.8;
@@ -263,7 +263,7 @@ body,
     width: 100%;
     padding: 12px 0;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 3px;
     text-transform: uppercase;
     cursor: pointer;
@@ -289,7 +289,7 @@ body,
 
 .section-label {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 10px;
@@ -301,20 +301,20 @@ body,
     align-items: center;
     padding: 5px 0;
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 14px;
     border-bottom: 1px solid;
 }
 
 .multiplier-value {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 15px;
     font-weight: bold;
     white-space: nowrap;
 }
 
 .multiplier-hint {
     font-family: var(--font-body);
-    font-size: 10px;
+    font-size: 15px;
     font-style: italic;
     opacity: 0.55;
     margin-top: 8px;
@@ -323,7 +323,7 @@ body,
 
 .arc-flag {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 1px;
     border: 1px solid;
     padding: 4px 8px;
@@ -350,7 +350,7 @@ body,
 
 .consequence-dateline {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 3px;
     text-transform: uppercase;
     opacity: 0.6;
@@ -369,7 +369,7 @@ body,
 
 .consequence-deck {
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 15px;
     font-style: italic;
     opacity: 0.7;
     margin-bottom: 20px;
@@ -394,7 +394,7 @@ body,
 
 .delta-label {
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 14px;
     letter-spacing: 2px;
     text-transform: uppercase;
     opacity: 0.6;
@@ -423,7 +423,7 @@ body,
 
 .result-narrative {
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 15px;
     opacity: 0.75;
     line-height: 1.75;
     font-style: italic;
@@ -436,7 +436,7 @@ body,
     align-self: flex-end;
     border: none;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     font-weight: bold;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -460,7 +460,7 @@ body,
     gap: 16px;
     padding: 80px 32px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 2px;
     text-transform: uppercase;
 }
@@ -500,7 +500,7 @@ body,
 
 .gameover-press {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 4px;
     text-transform: uppercase;
     opacity: 0.5;
@@ -515,14 +515,14 @@ body,
 
 .gameover-subtitle {
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 14px;
     font-style: italic;
     opacity: 0.6;
 }
 
 .gameover-reason {
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.7;
     border: 1px solid;
     padding: 16px;
@@ -552,7 +552,7 @@ body,
 }
 .final-stat-label {
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 14px;
     letter-spacing: 2px;
     text-transform: uppercase;
     opacity: 0.5;
@@ -561,7 +561,7 @@ body,
 .restart-btn {
     border: none;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 3px;
     text-transform: uppercase;
     padding: 12px 32px;
@@ -591,7 +591,7 @@ body,
     background: transparent;
     border: 1px solid;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;

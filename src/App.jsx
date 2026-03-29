@@ -1,4 +1,6 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+
+const GAME_STORAGE_KEY = "newsfuse_game_v1";
 import {
   SLOTS,
   INITIAL_SCORES,
@@ -42,27 +44,61 @@ const MAX_DAYS = 7;
 export default function App() {
   const { settings, theme } = useSettings();
 
-  const [phase, setPhase] = useState("intro");
-  const [dayData, setDayData] = useState(DAY_1_SEED);
-  const [dayNumber, setDayNumber] = useState(1);
-  const [scores, setScores] = useState({ ...INITIAL_SCORES });
-  const [prevScores, setPrevScores] = useState(null);
-  const [slots, setSlots] = useState(makeInitialSlots());
+  // Load persisted game state
+  const loadSaved = () => {
+    try {
+      const saved = localStorage.getItem(GAME_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  };
+  const saved = loadSaved();
+
+  const [phase, setPhase] = useState(saved?.phase ?? "intro");
+  const [dayData, setDayData] = useState(saved?.dayData ?? DAY_1_SEED);
+  const [dayNumber, setDayNumber] = useState(saved?.dayNumber ?? 1);
+  const [scores, setScores] = useState(saved?.scores ?? { ...INITIAL_SCORES });
+  const [prevScores, setPrevScores] = useState(saved?.prevScores ?? null);
+  const [slots, setSlots] = useState(saved?.slots ?? makeInitialSlots());
   const [draggedStory, setDraggedStory] = useState(null);
-  const [gridItems, setGridItems] = useState([]);
-  const [gridIsFull, setGridIsFull] = useState(false);
+  const [gridItems, setGridItems] = useState(saved?.gridItems ?? []);
+  const [gridIsFull, setGridIsFull] = useState(saved?.gridIsFull ?? false);
   const [factorResponses, setFactorResponses] = useState(
-    makeInitialResponses(DAY_1_SEED.external_factors),
+    saved?.factorResponses ?? makeInitialResponses(DAY_1_SEED.external_factors),
   );
-  const [arcFlags, setArcFlags] = useState([]);
-  const [partA, setPartA] = useState(null);
-  const [nextDayData, setNextDayData] = useState(null);
+  const [arcFlags, setArcFlags] = useState(saved?.arcFlags ?? []);
+  const [partA, setPartA] = useState(saved?.partA ?? null);
+  const [nextDayData, setNextDayData] = useState(saved?.nextDayData ?? null);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const [collapseKey, setCollapseKey] = useState(null);
-  const [isVictory, setIsVictory] = useState(false);
+  const [collapseKey, setCollapseKey] = useState(saved?.collapseKey ?? null);
+  const [isVictory, setIsVictory] = useState(saved?.isVictory ?? false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
+
+  // Persist game state to localStorage whenever key state changes
+  useEffect(() => {
+    // Don't persist transient/ui phases
+    if (phase === "publishing" || phase === "error") return;
+    try {
+      localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify({
+        phase,
+        dayData,
+        dayNumber,
+        scores,
+        prevScores,
+        slots,
+        gridItems,
+        gridIsFull,
+        factorResponses,
+        arcFlags,
+        partA,
+        nextDayData,
+        collapseKey,
+        isVictory,
+      }));
+    } catch {}
+  }, [phase, dayData, dayNumber, scores, prevScores, slots, gridItems, gridIsFull, factorResponses, arcFlags, partA, nextDayData, collapseKey, isVictory]);
 
   const placedIds = new Set(gridItems.map((it) => it.story.story_id));
   const availableStories = dayData.stories.filter(
@@ -174,6 +210,7 @@ export default function App() {
   }, [dayNumber, nextDayData]);
 
   const handleRestart = useCallback(() => {
+    try { localStorage.removeItem(GAME_STORAGE_KEY); } catch {}
     setPhase("story_delivery");
     setDayData(DAY_1_SEED);
     setDayNumber(1);

@@ -1,25 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useSettings } from "../context/SettingsContext.jsx";
 
-const FACTS = [
-  "In 2022, 67 journalists were killed worldwide for reporting the truth.",
-  "A single front-page retraction drops reader trust by ~40% permanently.",
-  "It takes 12 positive stories to offset one credibility failure.",
-  "The press is mentioned once in the US Constitution. Twice in India's.",
-  "Woodward & Bernstein burned 17 sources before printing a word on Watergate.",
-  "The average Indian newspaper editor faces 3 advertiser pressure calls per week.",
-];
-
 const HOW_TO_PLAY = [
   {
     icon: "📰",
     title: "Read the Desk",
-    body: "Each day, five stories land on your desk. Pick four for the front page. One might be a planted distraction — learn to tell them apart.",
+    body: "Five stories arrive each morning. Pick four for the front page — one might be a planted distraction.",
   },
   {
     icon: "⟺",
     title: "Build the Front Page",
-    body: "Drag stories onto the grid. Resize to fill every column inch. White space is not an option — publish only when the page is full.",
+    body: "Drag stories onto the grid. Resize to fill every column inch. No white space allowed.",
   },
   {
     icon: "⚖",
@@ -29,49 +20,18 @@ const HOW_TO_PLAY = [
   {
     icon: "◈",
     title: "Survive the Pressure",
-    body: "Advertisers, politicians, and your own reporters will push back. Respond or ignore — both are choices with consequences.",
-  },
-];
-
-const PARAMS_INTRO = [
-  { symbol: "INT", label: "Editorial Conscience", color: "#4f8ef7", icon: "⚖" },
-  { symbol: "REP", label: "City's Trust", color: "#a78bfa", icon: "★" },
-  { symbol: "REV", label: "Newsroom Funds", color: "#34d399", icon: "Rs" },
-  { symbol: "MOR", label: "Team Spirit", color: "#fb923c", icon: "◈" },
-  {
-    symbol: "POL",
-    label: "Establishment Goodwill",
-    color: "#f472b6",
-    icon: "◉",
+    body: "Advertisers, politicians, and reporters will push back. Respond or ignore — both have consequences.",
   },
 ];
 
 export default function IntroScreen({ onStart }) {
   const { theme, settings } = useSettings();
-  const [factIdx, setFactIdx] = useState(0);
-  const [step, setStep] = useState(0); // 0→page, 1→title, 2→fact, 3→params, 4→howto, 5→warning, 6→btn
+  const [visible, setVisible] = useState(false);
 
-  // Stagger sections in
   useEffect(() => {
-    const delays = [60, 320, 580, 860, 1120, 1340, 1540];
-    const timers = delays.map((d, i) => setTimeout(() => setStep(i + 1), d));
-    return () => timers.forEach(clearTimeout);
+    const t = setTimeout(() => setVisible(true), 60);
+    return () => clearTimeout(t);
   }, []);
-
-  // Rotate press facts
-  useEffect(() => {
-    const t = setInterval(
-      () => setFactIdx((i) => (i + 1) % FACTS.length),
-      3800,
-    );
-    return () => clearInterval(t);
-  }, []);
-
-  const vis = (threshold, delay = 0) => ({
-    opacity: step >= threshold ? 1 : 0,
-    transform: step >= threshold ? "translateY(0)" : "translateY(18px)",
-    transition: `opacity 0.55s ease ${delay}ms, transform 0.55s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-  });
 
   return (
     <div
@@ -85,377 +45,202 @@ export default function IntroScreen({ onStart }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
+        justifyContent: "center",
         padding: "40px 20px 60px",
-        opacity: step >= 1 ? 1 : 0,
+        opacity: visible ? 1 : 0,
         transition: "opacity 0.45s ease",
-        overflowY: "auto",
       }}
     >
-      {/* ── TICKER ─────────────────────────────────────────────── */}
-      <div
-        style={{
-          ...vis(1),
-          width: "100%",
-          maxWidth: 700,
-          overflow: "hidden",
-          marginBottom: 28,
-          borderTop: `1px solid ${theme.cardBorder}`,
-          borderBottom: `1px solid ${theme.cardBorder}`,
-          padding: "6px 0",
-        }}
-      >
-        <div
-          style={{
-            display: "inline-block",
-            animation: "ticker 24s linear infinite",
-            fontFamily: theme.mono,
-            fontSize: 9,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            color: theme.subColor,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {"BREAKING: NEW DAY AT THE SAMACHAR TIMES   ·   BHARATPUR'S LAST INDEPENDENT PAPER   ·   FIVE STORIES · FOUR SLOTS · YOUR CHOICE   ·   THE BENTO GRID IS THE CONSCIENCE MADE VISIBLE   ·   ".repeat(
-            3,
-          )}
-        </div>
-      </div>
+      <div style={{ maxWidth: 640, width: "100%" }}>
 
-      {/* ── MASTHEAD ─────────────────────────────────────────────── */}
-      <div
-        style={{
-          ...vis(2),
-          textAlign: "center",
-          marginBottom: 32,
-          width: "100%",
-          maxWidth: 700,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: theme.mono,
-            fontSize: 10,
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            color: theme.subColor,
-            marginBottom: 10,
-          }}
-        >
-          Bharatpur, India · A Newspaper Simulation
-        </div>
-        <div
-          style={{
-            display: "inline-block",
-            borderTop: `3px solid ${theme.textColor}`,
-            borderBottom: `3px solid ${theme.textColor}`,
-            padding: "18px 48px",
-            marginBottom: 12,
-          }}
-        >
+        {/* MASTHEAD */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div
+            style={{
+              fontFamily: theme.mono,
+              fontSize: 12,
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              color: theme.subColor,
+              marginBottom: 14,
+            }}
+          >
+            Bharatpur, India · A Newspaper Simulation
+          </div>
+          <div
+            style={{
+              display: "inline-block",
+              borderTop: `3px solid ${theme.textColor}`,
+              borderBottom: `3px solid ${theme.textColor}`,
+              padding: "16px 48px",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: theme.font,
+                fontSize: "clamp(36px, 7vw, 62px)",
+                fontWeight: 900,
+                letterSpacing: "-1.5px",
+                color: theme.textColor,
+                lineHeight: 1,
+              }}
+            >
+              {settings.paperName}
+            </div>
+          </div>
           <div
             style={{
               fontFamily: theme.font,
-              fontSize: "clamp(32px, 6vw, 58px)",
-              fontWeight: 900,
-              letterSpacing: "-1.5px",
-              color: theme.textColor,
-              lineHeight: 1,
-              animation:
-                step >= 2
-                  ? "masthead-stamp 0.9s cubic-bezier(0.16,1,0.3,1) both"
-                  : "none",
+              fontSize: 16,
+              fontStyle: "italic",
+              color: theme.subColor,
+              lineHeight: 1.6,
             }}
           >
-            The Samachar Times
+            You are{" "}
+            <strong style={{ color: theme.textColor }}>
+              {settings.editorName || "Arjun Mehta"}
+            </strong>
+            . Editor. Bharatpur's last independent newspaper is yours to run — or ruin.
           </div>
         </div>
+
+        {/* HOW TO PLAY */}
+        <div style={{ marginBottom: 36 }}>
+          <div
+            style={{
+              fontFamily: theme.mono,
+              fontSize: 11,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: theme.subColor,
+              marginBottom: 14,
+              borderBottom: `1px solid ${theme.cardBorder}`,
+              paddingBottom: 8,
+            }}
+          >
+            How to Play
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 10,
+            }}
+          >
+            {HOW_TO_PLAY.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  background: theme.cardBg,
+                  border: `1px solid ${theme.cardBorder}`,
+                  borderRadius: 4,
+                  padding: "14px 16px",
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: theme.mono,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: theme.textColor,
+                      letterSpacing: "0.06em",
+                      marginBottom: 5,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {item.title}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: theme.font,
+                      fontSize: 13,
+                      color: theme.subColor,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {item.body}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* PARAMETERS HINT */}
         <div
           style={{
+            background: theme.cardBg,
+            border: `1px solid ${theme.cardBorder}`,
+            borderLeft: `4px solid ${theme.accentGold}`,
+            padding: "14px 20px",
+            marginBottom: 36,
             fontFamily: theme.font,
             fontSize: 14,
-            fontStyle: "italic",
-            color: theme.subColor,
-            maxWidth: 480,
-            margin: "0 auto",
-            lineHeight: 1.6,
-          }}
-        >
-          You are Arjun Mehta. Editor. Bharatpur's last independent newspaper is
-          yours to run — or ruin.
-        </div>
-      </div>
-
-      {/* ── PRESS FACT ───────────────────────────────────────────── */}
-      <div
-        style={{
-          ...vis(3),
-          background: theme.cardBg,
-          border: `1px solid ${theme.cardBorder}`,
-          borderLeft: `4px solid ${theme.textColor}`,
-          padding: "12px 20px",
-          maxWidth: 560,
-          width: "100%",
-          marginBottom: 32,
-          fontFamily: theme.mono,
-          fontSize: 11,
-          color: theme.subColor,
-          lineHeight: 1.7,
-          minHeight: 48,
-        }}
-      >
-        <span style={{ color: theme.textColor, fontWeight: 700 }}>
-          PRESS FACT ·{" "}
-        </span>
-        <span key={factIdx} style={{ animation: "fadeIn 0.5s ease" }}>
-          {FACTS[factIdx]}
-        </span>
-      </div>
-
-      {/* ── FIVE VARIABLES ───────────────────────────────────────── */}
-      <div
-        style={{ ...vis(4), maxWidth: 700, width: "100%", marginBottom: 32 }}
-      >
-        <div
-          style={{
-            fontFamily: theme.mono,
-            fontSize: 9,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: theme.subColor,
-            marginBottom: 14,
-            borderBottom: `1px solid ${theme.cardBorder}`,
-            paddingBottom: 8,
-          }}
-        >
-          Five Variables. One Newspaper. No Easy Answers.
-        </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {PARAMS_INTRO.map((p, i) => (
-            <div
-              key={p.symbol}
-              style={{
-                flex: "1 1 120px",
-                background: theme.cardBg,
-                border: `1px solid ${theme.cardBorder}`,
-                borderTop: `3px solid ${p.color}`,
-                borderRadius: 4,
-                padding: "12px 14px",
-                animation:
-                  step >= 4
-                    ? `fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms both`
-                    : "none",
-              }}
-            >
-              <div style={{ fontSize: 18, marginBottom: 4, lineHeight: 1 }}>
-                {p.icon}
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.mono,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: p.color,
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {p.symbol}
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.font,
-                  fontSize: 10,
-                  color: theme.subColor,
-                  marginTop: 2,
-                  lineHeight: 1.4,
-                }}
-              >
-                {p.label}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div
-          style={{
-            fontFamily: theme.font,
-            fontSize: 11,
-            color: theme.subColor,
-            fontStyle: "italic",
-            marginTop: 10,
-            lineHeight: 1.6,
-          }}
-        >
-          Let any variable collapse and the paper dies. Keep them all alive for
-          5–7 days and you might just be remembered.
-        </div>
-      </div>
-
-      {/* ── HOW TO PLAY ──────────────────────────────────────────── */}
-      <div
-        style={{ ...vis(5), maxWidth: 700, width: "100%", marginBottom: 36 }}
-      >
-        <div
-          style={{
-            fontFamily: theme.mono,
-            fontSize: 9,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: theme.subColor,
-            marginBottom: 14,
-            borderBottom: `1px solid ${theme.cardBorder}`,
-            paddingBottom: 8,
-          }}
-        >
-          How to Play — Five Stories, Four Slots
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {HOW_TO_PLAY.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.cardBorder}`,
-                borderRadius: 4,
-                padding: "14px 16px",
-                display: "flex",
-                gap: 12,
-                alignItems: "flex-start",
-                animation:
-                  step >= 5
-                    ? `fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 100}ms both`
-                    : "none",
-              }}
-            >
-              <div style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
-                {item.icon}
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: theme.mono,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: theme.textColor,
-                    letterSpacing: "0.06em",
-                    marginBottom: 5,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {item.title}
-                </div>
-                <div
-                  style={{
-                    fontFamily: theme.font,
-                    fontSize: 11,
-                    color: theme.subColor,
-                    lineHeight: 1.65,
-                  }}
-                >
-                  {item.body}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── WARNING ──────────────────────────────────────────────── */}
-      <div
-        style={{
-          ...vis(6),
-          maxWidth: 560,
-          width: "100%",
-          marginBottom: 32,
-          background: theme.darkMode ? "#2a1a1a" : "#fef9f0",
-          border: `1px solid ${theme.cardBorder}`,
-          borderLeft: "4px solid #c8a96e",
-          padding: "14px 20px",
-        }}
-      >
-        <div
-          style={{
-            fontFamily: theme.mono,
-            fontSize: 9,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "#c8a96e",
-            marginBottom: 6,
-          }}
-        >
-          Editor's Note
-        </div>
-        <div
-          style={{
-            fontFamily: theme.font,
-            fontSize: 12,
             color: theme.subColor,
             lineHeight: 1.7,
             fontStyle: "italic",
           }}
         >
-          Five stories arrive each morning. You place four. The fifth is left
-          behind — unkilled, unpublished, just… passed over. One of them was
-          planted. One of them is the truth nobody wants to print. Your call
-          which is which.
+          Balance{" "}
+          <strong style={{ color: theme.textColor }}>five pressures</strong>:
+          Integrity, Reputation, Revenue, Morale, and Political standing. Let
+          any one collapse and the paper dies.
         </div>
-      </div>
 
-      {/* ── START BUTTON ─────────────────────────────────────────── */}
-      <div style={{ ...vis(7), textAlign: "center" }}>
-        <button
-          onClick={onStart}
-          style={{
-            background: theme.darkMode ? "#e8e4db" : "#1a1a1a",
-            color: theme.darkMode ? "#1a1a1a" : "#f5f1e8",
-            border: "none",
-            padding: "16px 52px",
-            fontFamily: theme.mono,
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            borderRadius: 2,
-            transition:
-              "opacity 0.15s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.88";
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.28)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = "1";
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = "translateY(0) scale(0.97)";
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px) scale(1)";
-          }}
-        >
-          ◆ Open the Newsroom — Day 1
-        </button>
-        <div
-          style={{
-            fontFamily: theme.mono,
-            fontSize: 9,
-            color: theme.subColor,
-            letterSpacing: "0.12em",
-            marginTop: 10,
-            textTransform: "uppercase",
-          }}
-        >
-          {settings.paperName} · Editor: {settings.editorName || "Arjun Mehta"}
+        {/* START BUTTON */}
+        <div style={{ textAlign: "center" }}>
+          <button
+            onClick={onStart}
+            style={{
+              background: theme.darkMode ? "#e8e4db" : "#1a1a1a",
+              color: theme.darkMode ? "#1a1a1a" : "#f5f1e8",
+              border: "none",
+              padding: "18px 60px",
+              fontFamily: theme.mono,
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              borderRadius: 2,
+              transition:
+                "opacity 0.15s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.88";
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.28)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            ◆ Open the Newsroom — Day 1
+          </button>
+          <div
+            style={{
+              fontFamily: theme.mono,
+              fontSize: 11,
+              color: theme.subColor,
+              letterSpacing: "0.12em",
+              marginTop: 12,
+              textTransform: "uppercase",
+            }}
+          >
+            {settings.paperName} · Editor:{" "}
+            {settings.editorName || "Arjun Mehta"}
+          </div>
         </div>
       </div>
     </div>

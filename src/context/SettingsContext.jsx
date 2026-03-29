@@ -1,4 +1,6 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+
+const SETTINGS_STORAGE_KEY = "newsfuse_settings_v1";
 
 // ─────────────────────────────────────────────────────────────
 //  FONT OPTIONS
@@ -90,7 +92,20 @@ const DEFAULT_SETTINGS = {
 const SettingsContext = createContext(null);
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    } catch {}
+    return DEFAULT_SETTINGS;
+  });
+
+  // Persist settings whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
+  }, [settings]);
 
   function updateSettings(partial) {
     setSettings((prev) => ({ ...prev, ...partial }));
