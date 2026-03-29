@@ -14,17 +14,10 @@ function buildPayload(gameState) {
   const {
     day,
     scores,
-    slots,
-    factors,
-    arcFlags,
-    editorName,
+    slots, // array of { story_id, headline, col, row, w, h, weight }
+    factors, // [{ factor_id, name, type, pressure, description, player_response }]
+    arcFlags, // string[]
   } = gameState;
-
-  // Inject the real editor name into the system prompt so the AI uses it
-  const systemPrompt = SYSTEM_PROMPT.replace(
-    /Editor: Arjun Mehta/g,
-    "Editor: " + (editorName || "Arjun Mehta")
-  );
 
   // grid_layout: array sorted by weight descending
   const gridLayout = [...slots]
@@ -63,7 +56,7 @@ function buildPayload(gameState) {
     max_tokens: 6000,
     temperature: 0.7,
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
         content:

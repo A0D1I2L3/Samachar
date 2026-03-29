@@ -7,7 +7,6 @@ import {
   PARAMS,
   DAY_1_SEED,
   WIN_CONDITIONS,
-  ACHIEVEMENT_EVENTS,
 } from "./engine/constants.js";
 import { processEditorTurn, applyScoreUpdates } from "./engine/grokApi.js";
 import {
@@ -167,45 +166,11 @@ export default function App() {
         })),
         factors: factorsWithResponse,
         arcFlags,
-        editorName: settings.editorName || "Arjun Mehta",
       });
 
       const nextScores = applyScoreUpdates(scores, a.score_updates);
       setPrevScores({ ...scores });
       setScores(nextScores);
-
-      // ── Achievement injection ──────────────────────────────────────────────
-      // The AI often returns achievement:null even when a param crosses its
-      // achieveAt threshold. Detect it locally and fill in from ACHIEVEMENT_EVENTS.
-      if (!a.achievement) {
-        for (const [key, param] of Object.entries(PARAMS)) {
-          const prev = scores[key] ?? 0;
-          const next = nextScores[key] ?? 0;
-          // Crossed the threshold this turn (wasn't there before, is now)
-          if (next >= param.achieveAt && prev < param.achieveAt) {
-            const evt = ACHIEVEMENT_EVENTS[key];
-            if (evt) {
-              a.achievement = {
-                name: evt.name,
-                description: evt.description,
-                theory: evt.theory,
-                param: key,
-                bonus: evt.bonus,
-              };
-              // Apply any bonus scores from the achievement
-              if (evt.bonus) {
-                for (const [bKey, bVal] of Object.entries(evt.bonus)) {
-                  if (nextScores[bKey] !== undefined) {
-                    nextScores[bKey] = Math.min(100, nextScores[bKey] + bVal);
-                  }
-                }
-                setScores({ ...nextScores });
-              }
-              break;
-            }
-          }
-        }
-      }
 
       const newFlags = b.stories
         .map((s) => s.arc_flag_generated)

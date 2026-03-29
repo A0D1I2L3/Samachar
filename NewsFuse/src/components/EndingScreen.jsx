@@ -29,15 +29,6 @@ export default function EndingScreen({ scores, collapseKey, dayNumber, arcFlags,
     ending = win ? { emoji: win.emoji, title: win.title, epilogue: win.epilogue } : FALLBACK_ENDING;
   }
 
-  // Replace hardcoded default name with actual editor name throughout epilogues
-  const editorName = settings.editorName || "Arjun Mehta";
-  if (ending && ending.epilogue) {
-    ending = {
-      ...ending,
-      epilogue: ending.epilogue.replace(/Arjun Mehta/g, editorName),
-    };
-  }
-
   const isCollapse = !!collapseKey;
   const accentColor = isCollapse ? "#8b1a1a" : "#1a4a1a";
 

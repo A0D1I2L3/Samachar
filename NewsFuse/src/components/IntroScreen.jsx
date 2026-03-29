@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useSettings } from "../context/SettingsContext.jsx";
 
 const HOW_TO_PLAY = [
@@ -25,24 +25,13 @@ const HOW_TO_PLAY = [
 ];
 
 export default function IntroScreen({ onStart }) {
-  const { theme, settings, updateSettings } = useSettings();
+  const { theme, settings } = useSettings();
   const [visible, setVisible] = useState(false);
-  const [nameInput, setNameInput] = useState(settings.editorName || "");
-  const inputRef = useRef(null);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setVisible(true);
-      setTimeout(() => inputRef.current?.focus(), 200);
-    }, 60);
+    const t = setTimeout(() => setVisible(true), 60);
     return () => clearTimeout(t);
   }, []);
-
-  const handleStart = () => {
-    const finalName = nameInput.trim() || "Arjun Mehta";
-    updateSettings({ editorName: finalName });
-    onStart();
-  };
 
   return (
     <div
@@ -111,7 +100,7 @@ export default function IntroScreen({ onStart }) {
           >
             You are{" "}
             <strong style={{ color: theme.textColor }}>
-              {nameInput.trim() || "Arjun Mehta"}
+              {settings.editorName || "Arjun Mehta"}
             </strong>
             . Editor. Bharatpur's last independent newspaper is yours to run — or ruin.
           </div>
@@ -207,73 +196,10 @@ export default function IntroScreen({ onStart }) {
           any one collapse and the paper dies.
         </div>
 
-        {/* EDITOR NAME INPUT */}
-        <div
-          style={{
-            background: theme.cardBg,
-            border: `1px solid ${theme.cardBorder}`,
-            borderLeft: `4px solid ${theme.textColor}`,
-            padding: "18px 20px",
-            marginBottom: 28,
-          }}
-        >
-          <label
-            style={{
-              fontFamily: theme.mono,
-              fontSize: 10,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: theme.subColor,
-              display: "block",
-              marginBottom: 10,
-            }}
-          >
-            Your Editor Name
-          </label>
-          <input
-            ref={inputRef}
-            type="text"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleStart()}
-            placeholder="Arjun Mehta"
-            maxLength={40}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: theme.inputBg,
-              border: `1px solid ${theme.cardBorder}`,
-              borderRadius: 2,
-              padding: "10px 14px",
-              fontFamily: theme.font,
-              fontSize: 17,
-              fontWeight: 700,
-              color: theme.textColor,
-              outline: "none",
-              letterSpacing: "0.01em",
-              transition: "border-color 0.15s",
-            }}
-            onFocus={(e) => { e.target.style.borderColor = theme.textColor; }}
-            onBlur={(e) => { e.target.style.borderColor = theme.cardBorder; }}
-          />
-          <div
-            style={{
-              fontFamily: theme.font,
-              fontSize: 12,
-              fontStyle: "italic",
-              color: theme.subColor,
-              marginTop: 8,
-              lineHeight: 1.5,
-            }}
-          >
-            Leave blank to use the default name "Arjun Mehta". Your name carries through every edition.
-          </div>
-        </div>
-
         {/* START BUTTON */}
         <div style={{ textAlign: "center" }}>
           <button
-            onClick={handleStart}
+            onClick={onStart}
             style={{
               background: theme.darkMode ? "#e8e4db" : "#1a1a1a",
               color: theme.darkMode ? "#1a1a1a" : "#f5f1e8",
@@ -313,7 +239,7 @@ export default function IntroScreen({ onStart }) {
             }}
           >
             {settings.paperName} · Editor:{" "}
-            {nameInput.trim() || "Arjun Mehta"}
+            {settings.editorName || "Arjun Mehta"}
           </div>
         </div>
       </div>
