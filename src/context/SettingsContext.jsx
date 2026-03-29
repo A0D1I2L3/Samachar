@@ -80,7 +80,7 @@ export const BG_OPTIONS = [
 const DEFAULT_SETTINGS = {
   paperName: "SAMACHAR TIMES",
   paperSlogan: "Truth Without Fear · Est. 1944",
-  editorName: "Morgan Voss",
+  editorName: "Arjun Mehta",
   fontId: "georgia",
   bgId: "newsprint",
   darkMode: false,

@@ -83,7 +83,7 @@ export default function SettingsDrawer({ open, onClose }) {
     updateSettings({
       paperName: localName || "SAMACHAR TIMES",
       paperSlogan: localSlogan || "Truth Without Fear · Est. 1944",
-      editorName: localEditor || "Morgan Voss",
+      editorName: localEditor || "Arjun Mehta",
     });
     onClose();
   }
@@ -260,7 +260,7 @@ export default function SettingsDrawer({ open, onClose }) {
               style={inputStyle}
               value={localEditor}
               onChange={(e) => setLocalEditor(e.target.value)}
-              placeholder="Morgan Voss"
+              placeholder="Arjun Mehta"
               maxLength={40}
               onFocus={(e) => (e.target.style.borderColor = theme.accentGold)}
               onBlur={(e) => (e.target.style.borderColor = theme.cardBorder)}
@@ -319,7 +319,7 @@ export default function SettingsDrawer({ open, onClose }) {
                   opacity: 0.7,
                 }}
               >
-                Editor: {localEditor || "Morgan Voss"}
+                Editor: {localEditor || "Arjun Mehta"}
               </div>
             </div>
           </div>

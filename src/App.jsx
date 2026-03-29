@@ -81,24 +81,42 @@ export default function App() {
     // Don't persist transient/ui phases
     if (phase === "publishing" || phase === "error") return;
     try {
-      localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify({
-        phase,
-        dayData,
-        dayNumber,
-        scores,
-        prevScores,
-        slots,
-        gridItems,
-        gridIsFull,
-        factorResponses,
-        arcFlags,
-        partA,
-        nextDayData,
-        collapseKey,
-        isVictory,
-      }));
+      localStorage.setItem(
+        GAME_STORAGE_KEY,
+        JSON.stringify({
+          phase,
+          dayData,
+          dayNumber,
+          scores,
+          prevScores,
+          slots,
+          gridItems,
+          gridIsFull,
+          factorResponses,
+          arcFlags,
+          partA,
+          nextDayData,
+          collapseKey,
+          isVictory,
+        }),
+      );
     } catch {}
-  }, [phase, dayData, dayNumber, scores, prevScores, slots, gridItems, gridIsFull, factorResponses, arcFlags, partA, nextDayData, collapseKey, isVictory]);
+  }, [
+    phase,
+    dayData,
+    dayNumber,
+    scores,
+    prevScores,
+    slots,
+    gridItems,
+    gridIsFull,
+    factorResponses,
+    arcFlags,
+    partA,
+    nextDayData,
+    collapseKey,
+    isVictory,
+  ]);
 
   const placedIds = new Set(gridItems.map((it) => it.story.story_id));
   const availableStories = dayData.stories.filter(
@@ -210,7 +228,9 @@ export default function App() {
   }, [dayNumber, nextDayData]);
 
   const handleRestart = useCallback(() => {
-    try { localStorage.removeItem(GAME_STORAGE_KEY); } catch {}
+    try {
+      localStorage.removeItem(GAME_STORAGE_KEY);
+    } catch {}
     setPhase("story_delivery");
     setDayData(DAY_1_SEED);
     setDayNumber(1);
@@ -491,7 +511,7 @@ export default function App() {
             >
               <span>Halcyon City · Vol. LXXX</span>
               <span className="newspaper-meta-italic">
-                Editor: {settings.editorName || "Morgan Voss"}
+                Editor: {settings.editorName || "Arjun Mehta"}
               </span>
               <span>Day {dayNumber} Edition</span>
             </div>
