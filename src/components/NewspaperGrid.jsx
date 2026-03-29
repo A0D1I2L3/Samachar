@@ -207,14 +207,11 @@ export default function NewspaperGrid({
       setHoverCell(null);
       // Ignore if this was a placed-card drag (handled by delete zone / card logic)
       if (!draggedStory) return;
-      // Ignore if already placed (same story being re-dropped — no-op)
-      if (items.some((it) => it.story.story_id === draggedStory.story_id))
-        return;
 
       const cell = pxToCell(e.clientX, e.clientY);
       if (!cell) return;
 
-      // Check if dropping onto an existing placed card
+      // Check if dropping onto an existing placed card — REPLACE it (before any other guards)
       const targetItem = items.find(
         (it) =>
           cell.col >= it.col &&
@@ -224,7 +221,9 @@ export default function NewspaperGrid({
       );
 
       if (targetItem) {
-        // REPLACE: swap out the card under the cursor, keep its position + size
+        // Same story dropped on itself — no-op
+        if (targetItem.story.story_id === draggedStory.story_id) return;
+        // Swap story in place, keep position + size, clear any pre-expand memory
         setItems((prev) =>
           prev.map((it) =>
             it.id === targetItem.id
@@ -232,6 +231,8 @@ export default function NewspaperGrid({
                   ...it,
                   id: draggedStory.story_id,
                   story: draggedStory,
+                  preExpandW: null,
+                  preExpandH: null,
                 }
               : it,
           ),
@@ -240,6 +241,9 @@ export default function NewspaperGrid({
       }
 
       // DROP INTO EMPTY SPACE
+      // Guard: same story already placed somewhere else — no duplicate
+      if (items.some((it) => it.story.story_id === draggedStory.story_id))
+        return;
       if (items.length >= MAX_HEADLINES) return; // grid full, no free slot
 
       let { col, row } = cell;
@@ -270,7 +274,7 @@ export default function NewspaperGrid({
     setItems((prev) => prev.filter((it) => it.id !== id));
   }, []);
 
-  // ── Double-click: toggle between fully-expanded and DEFAULT size ──────────
+  // ── Double-click: expand to fill available space; second click restores pre-expand size ──
   const handleDoubleClick = useCallback((e, id) => {
     e.stopPropagation();
     setItems((prev) => {
@@ -278,37 +282,54 @@ export default function NewspaperGrid({
       if (!item) return prev;
       const others = prev.filter((it) => it.id !== id);
 
+      // If the item was previously expanded (preExpandW/H stored), restore those dims
+      if (item.preExpandW != null && item.preExpandH != null) {
+        const rw = item.preExpandW;
+        const rh = item.preExpandH;
+        // Verify the restore size still fits (others may have moved)
+        const restoreOk = canPlace(others, item.col, item.row, rw, rh);
+        return prev.map((it) =>
+          it.id === id
+            ? {
+                ...it,
+                w: restoreOk ? rw : DEFAULT_W,
+                h: restoreOk ? rh : DEFAULT_H,
+                preExpandW: null,
+                preExpandH: null,
+              }
+            : it,
+        );
+      }
+
       // Greedy-expand: find the largest (w,h) that fits from this origin
-      let bestW = DEFAULT_W;
-      let bestH = DEFAULT_H;
-      for (let w = DEFAULT_W; w <= COLS - item.col; w++) {
-        for (let h = DEFAULT_H; h <= ROWS - item.row; h++) {
-          if (canPlace(others, item.col, item.row, w, h)) {
-            bestW = w;
-            bestH = h;
-          } else {
-            break;
-          }
+      let bestW = item.w;
+      let bestH = item.h;
+      for (let w = item.w; w <= COLS - item.col; w++) {
+        let rowBest = item.h;
+        for (let h = item.h; h <= ROWS - item.row; h++) {
+          if (canPlace(others, item.col, item.row, w, h)) rowBest = h;
+          else break;
         }
+        if (canPlace(others, item.col, item.row, w, rowBest)) {
+          bestW = w;
+          bestH = rowBest;
+        } else break;
       }
 
-      // If already at the expanded size (or larger), shrink back to default
-      const alreadyExpanded = item.w >= bestW && item.h >= bestH;
-      if (alreadyExpanded) {
-        // Collapse — make sure the default size still fits at the current origin
-        const collapseW = DEFAULT_W;
-        const collapseH = DEFAULT_H;
-        if (canPlace(others, item.col, item.row, collapseW, collapseH)) {
-          return prev.map((it) =>
-            it.id === id ? { ...it, w: collapseW, h: collapseH } : it,
-          );
-        }
-        return prev; // can't collapse for some reason, leave as-is
-      }
+      // Nothing to expand into — no-op
+      if (bestW === item.w && bestH === item.h) return prev;
 
-      // Expand to best available size
+      // Store pre-expand size so second double-click can restore it
       return prev.map((it) =>
-        it.id === id ? { ...it, w: bestW, h: bestH } : it,
+        it.id === id
+          ? {
+              ...it,
+              w: bestW,
+              h: bestH,
+              preExpandW: item.w,
+              preExpandH: item.h,
+            }
+          : it,
       );
     });
   }, []);
@@ -444,7 +465,10 @@ export default function NewspaperGrid({
         if (valid) {
           setItems((prev) =>
             prev.map((it) =>
-              it.id === resizing.id ? { ...it, col, row, w, h } : it,
+              // Clear preExpand memo when user manually resizes — new size is the baseline
+              it.id === resizing.id
+                ? { ...it, col, row, w, h, preExpandW: null, preExpandH: null }
+                : it,
             ),
           );
         }
@@ -625,12 +649,41 @@ export default function NewspaperGrid({
                 e.preventDefault();
                 return;
               }
-              // Set a ghost image so the card looks like it's being picked up
               e.dataTransfer.effectAllowed = "move";
               e.dataTransfer.setData("text/plain", item.id);
               setDraggingCardId(item.id);
             }}
             onDragEnd={() => setDraggingCardId(null)}
+            onDragOver={(e) => {
+              // Only accept drops from the pool (draggedStory set), not from other cards
+              if (!published && draggedStory && !draggingCardId) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = "move";
+              }
+            }}
+            onDrop={(e) => {
+              if (!published && draggedStory && !draggingCardId) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Same story dropped on itself — no-op
+                if (item.story.story_id === draggedStory.story_id) return;
+                // Replace this card's story, keep its size + position
+                setItems((prev) =>
+                  prev.map((it) =>
+                    it.id === item.id
+                      ? {
+                          ...it,
+                          id: draggedStory.story_id,
+                          story: draggedStory,
+                          preExpandW: null,
+                          preExpandH: null,
+                        }
+                      : it,
+                  ),
+                );
+              }
+            }}
             onPointerMove={(e) => handleCardPointerMove(e, item.id)}
             onPointerLeave={handleCardPointerLeave}
             onPointerDown={(e) => handleCardPointerDown(e, item.id)}
